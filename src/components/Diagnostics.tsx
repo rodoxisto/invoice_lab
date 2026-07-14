@@ -24,9 +24,9 @@ export function Diagnostics({ analysis, invoice, override, onOverride, onApply, 
           {analysis.warnings.length > 0 && <div className="warning-box"><AlertTriangle size={18} /><div><strong>Pontos para conferir</strong>{analysis.warnings.map((warning) => <span key={warning}>{warning}</span>)}</div></div>}
           <div className="override-box">
             <strong>Ajuste para conferência</strong>
-            <p>Informe uma data real do PDF. Os demais meses serão reprojetados automaticamente usando esse novo dia de corte.</p>
+            <p>Informe a data real do PDF. O novo corte será aplicado somente à fatura {invoice.key}; os outros meses não serão alterados.</p>
             <input type="date" value={override} onChange={(event) => onOverride(event.target.value)} />
-            <div><button className="button secondary" onClick={onReset}>Restaurar inferência</button><button className="button primary" onClick={onApply} disabled={!override}>Aplicar data</button></div>
+            <div><button className="button secondary" onClick={onReset}>Restaurar esta fatura</button><button className="button primary" onClick={onApply} disabled={!override}>Aplicar nesta fatura</button></div>
           </div>
         </div>
       </aside>

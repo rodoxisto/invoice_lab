@@ -21,14 +21,7 @@ interface Anchor {
   evidence: ClosingEvidence;
 }
 
-function inferAnchor(transactions: NormalizedTransaction[], override?: Date): Anchor {
-  if (override) {
-    return {
-      date: startOfDay(override),
-      evidence: { method: "explicit-field", label: "Ajuste de conferência", detail: "Data informada manualmente para testar o agrupamento.", confidence: "high" },
-    };
-  }
-
+function inferAnchor(transactions: NormalizedTransaction[]): Anchor {
   const explicit = explicitClosingDates(transactions);
   if (explicit.length) {
     return {
@@ -83,6 +76,27 @@ function inferAnchor(transactions: NormalizedTransaction[], override?: Date): An
       confidence: "low",
     },
   };
+}
+
+function applyClosingOverrides(closings: InferredClosing[], overrides: Record<string, Date>): InferredClosing[] {
+  return closings
+    .map((closing) => {
+      const override = overrides[closing.invoiceKey];
+      if (!override || Number.isNaN(override.getTime())) return closing;
+      const closingDate = startOfDay(override);
+      return {
+        ...closing,
+        closingDate,
+        isOpen: closingDate > new Date() || (!closing.paymentDate && closingDate >= new Date()),
+        evidence: {
+          method: "explicit-field" as const,
+          label: "Ajuste manual desta fatura",
+          detail: `Fechamento da fatura ${closing.invoiceKey} ajustado individualmente para ${closingDate.toLocaleDateString("pt-BR")}.`,
+          confidence: "high" as const,
+        },
+      };
+    })
+    .sort((a, b) => a.closingDate.getTime() - b.closingDate.getTime());
 }
 
 function downgrade(confidence: Confidence): Confidence {
@@ -147,10 +161,10 @@ function invoiceFromClosing(closing: InferredClosing, transactions: NormalizedTr
   };
 }
 
-export function inferInvoices(parsed: ParseResult, overrideAnchor?: Date): AnalysisResult {
+export function inferInvoices(parsed: ParseResult, closingOverrides: Record<string, Date> = {}): AnalysisResult {
   const { transactions } = parsed;
-  const anchor = inferAnchor(transactions, overrideAnchor);
-  const closings = buildClosings(transactions, anchor);
+  const anchor = inferAnchor(transactions);
+  const closings = applyClosingOverrides(buildClosings(transactions, anchor), closingOverrides);
   const grouped = new Map<InferredClosing, NormalizedTransaction[]>();
   closings.forEach((closing) => grouped.set(closing, []));
 

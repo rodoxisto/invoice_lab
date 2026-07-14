@@ -8,6 +8,13 @@ import { inferInvoices } from "./inference/invoiceInference";
 import { parseOpenFinanceJson } from "./parsers/jsonParser";
 import type { AnalysisResult, ParseResult } from "./domain/types";
 
+function toDateInput(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function App() {
   const [parsed, setParsed] = useState<ParseResult | null>(null);
   const [fileName, setFileName] = useState("");
@@ -15,7 +22,7 @@ export default function App() {
   const [selectedKey, setSelectedKey] = useState("");
   const [accountKey, setAccountKey] = useState("all");
   const [overrideDate, setOverrideDate] = useState("");
-  const [appliedOverride, setAppliedOverride] = useState<Date | undefined>();
+  const [closingOverrides, setClosingOverrides] = useState<Record<string, Date>>({});
   const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   const accounts = useMemo(() => {
@@ -27,8 +34,8 @@ export default function App() {
   const analysis: AnalysisResult | null = useMemo(() => {
     if (!parsed) return null;
     const filtered = accountKey === "all" ? parsed : { ...parsed, transactions: parsed.transactions.filter((row) => (row.accountId || row.cardNumber) === accountKey) };
-    return inferInvoices(filtered, appliedOverride);
-  }, [parsed, accountKey, appliedOverride]);
+    return inferInvoices(filtered, closingOverrides);
+  }, [parsed, accountKey, closingOverrides]);
 
   const selectedInvoice = analysis?.invoices.find((invoice) => invoice.key === selectedKey) ?? analysis?.invoices[0];
 
@@ -45,7 +52,7 @@ export default function App() {
       const accountValues = result.transactions.map((row) => row.accountId || row.cardNumber).filter(Boolean) as string[];
       const uniqueAccounts = [...new Set(accountValues)];
       setAccountKey(uniqueAccounts.length > 1 ? uniqueAccounts[0] : "all");
-      setAppliedOverride(undefined);
+      setClosingOverrides({});
       setOverrideDate("");
     } catch (cause) {
       setError(cause instanceof SyntaxError ? "O arquivo não contém um JSON válido." : cause instanceof Error ? cause.message : "Não foi possível ler o arquivo.");
@@ -57,7 +64,7 @@ export default function App() {
     setFileName("");
     setError("");
     setSelectedKey("");
-    setAppliedOverride(undefined);
+    setClosingOverrides({});
   }
 
   if (!analysis || !selectedInvoice) return <EmptyState onFile={importFile} error={error} />;
@@ -68,9 +75,9 @@ export default function App() {
         <div className="brand"><span><FileJson2 size={22} /></span><div><strong>Invoice Lab</strong><small>Open Finance playground</small></div></div>
         <div className="header-actions">
           <div className="file-name"><ShieldCheck size={15} /><span>{fileName}</span></div>
-          {accounts.length > 1 && <select value={accountKey} onChange={(event) => { setAccountKey(event.target.value); setSelectedKey(""); }}>{accounts.map((account) => <option value={account} key={account}>{account}</option>)}</select>}
+          {accounts.length > 1 && <select value={accountKey} onChange={(event) => { setAccountKey(event.target.value); setSelectedKey(""); setClosingOverrides({}); }}>{accounts.map((account) => <option value={account} key={account}>{account}</option>)}</select>}
           <button className="icon-button" title="Importar outro arquivo" onClick={reset}><RotateCcw size={18} /></button>
-          <button className="diagnostic-button" onClick={() => setShowDiagnostics(true)}><Settings2 size={17} /> Diagnóstico</button>
+          <button className="diagnostic-button" onClick={() => { setOverrideDate(toDateInput(closingOverrides[selectedInvoice.key] ?? selectedInvoice.closingDate)); setShowDiagnostics(true); }}><Settings2 size={17} /> Diagnóstico</button>
         </div>
       </header>
       <div className="workspace">
@@ -82,8 +89,8 @@ export default function App() {
         invoice={selectedInvoice}
         override={overrideDate}
         onOverride={setOverrideDate}
-        onApply={() => { setAppliedOverride(new Date(`${overrideDate}T12:00:00`)); setSelectedKey(""); setShowDiagnostics(false); }}
-        onReset={() => { setAppliedOverride(undefined); setOverrideDate(""); setSelectedKey(""); setShowDiagnostics(false); }}
+        onApply={() => { setClosingOverrides((current) => ({ ...current, [selectedInvoice.key]: new Date(`${overrideDate}T12:00:00`) })); setShowDiagnostics(false); }}
+        onReset={() => { setClosingOverrides((current) => { const next = { ...current }; delete next[selectedInvoice.key]; return next; }); setOverrideDate(""); setShowDiagnostics(false); }}
         onClose={() => setShowDiagnostics(false)}
       />}
     </div>

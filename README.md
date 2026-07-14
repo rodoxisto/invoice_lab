@@ -27,6 +27,6 @@ O motor procura evidências nesta ordem:
 3. padrão mensal de pagamentos;
 4. estimativa conservadora quando as demais evidências não existem.
 
-Compras, encargos e estornos são atribuídos ao primeiro fechamento igual ou posterior. Pagamentos são associados à fatura fechada imediatamente anterior. A tela de diagnóstico mostra a evidência e permite informar uma data real do PDF apenas para conferência.
+Compras, encargos e estornos são atribuídos ao primeiro fechamento igual ou posterior. Pagamentos são associados à fatura fechada imediatamente anterior. A tela de diagnóstico mostra a evidência e permite informar uma data real do PDF apenas para a fatura selecionada, sem alterar os demais meses.
 
 Todo o processamento acontece no navegador. O arquivo importado não é enviado nem armazenado externamente.

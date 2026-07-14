@@ -45,4 +45,18 @@ describe("invoice inference", () => {
     const analysis = inferInvoices(parseOpenFinanceJson(input));
     expect(analysis.invoices.reduce((sum, invoice) => sum + invoice.debits, 0)).toBe(159.5);
   });
+
+  it("applies a manual closing date only to the selected invoice", () => {
+    const input = JSON.parse(readFileSync("json_pluggy_c6_jef.json", "utf8"));
+    const parsed = parseOpenFinanceJson(input);
+    const original = inferInvoices(parsed);
+    const adjusted = inferInvoices(parsed, { "2026-07": new Date(2026, 5, 24) });
+    const originalJune = original.invoices.find((invoice) => invoice.key === "2026-06");
+    const adjustedJune = adjusted.invoices.find((invoice) => invoice.key === "2026-06");
+    const adjustedJuly = adjusted.invoices.find((invoice) => invoice.key === "2026-07");
+    expect(adjustedJuly?.closingDate.getDate()).toBe(24);
+    expect(adjustedJuly?.evidence.label).toBe("Ajuste manual desta fatura");
+    expect(adjustedJune?.closingDate.getTime()).toBe(originalJune?.closingDate.getTime());
+    expect(adjustedJune?.debits).toBe(originalJune?.debits);
+  });
 });
