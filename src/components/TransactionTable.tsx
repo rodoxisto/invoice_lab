@@ -19,7 +19,10 @@ export function TransactionTable({ transactions }: { transactions: NormalizedTra
               <span className="transaction-date">{formatDate(transaction.date)}</span>
               <span className="transaction-description"><strong>{transaction.description}</strong><small>{transaction.status}</small></span>
               <span className={`nature-pill ${isDebit ? "debit" : "credit"}`}>{isDebit ? <ArrowUpRight size={13} /> : <ArrowDownLeft size={13} />}{label}</span>
-              <span className={`transaction-value ${isDebit ? "" : "credit"}`}>{isDebit ? "" : "− "}{formatCurrency(transaction.amount)}</span>
+              <span className={`transaction-value ${isDebit ? "" : "credit"} ${transaction.conversionMissing ? "missing" : ""}`}>
+                <strong>{transaction.conversionMissing ? "Conversão ausente" : `${isDebit ? "" : "− "}${formatCurrency(transaction.amount)}`}</strong>
+                {transaction.currencyCode !== "BRL" && <small>{formatCurrency(Math.abs(transaction.originalAmount), transaction.currencyCode)} no lançamento</small>}
+              </span>
             </div>
           );
         })}

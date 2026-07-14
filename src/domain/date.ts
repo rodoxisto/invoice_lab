@@ -42,6 +42,6 @@ export function formatMonth(key: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+export function formatCurrency(value: number, currency = "BRL"): string {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(value);
 }

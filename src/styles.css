@@ -128,7 +128,9 @@ button { cursor: pointer; }
 .transaction-description small { font-size: 9px; letter-spacing: .08em; color: #96a1aa; }
 .nature-pill { justify-self: start; display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; background: #eef3f6; color: #536e80; }
 .nature-pill.credit { background: #e9f6f0; color: #3b8066; }
-.transaction-value { text-align: right; font-size: 13px; font-weight: 700; color: #263b4e; }
+.transaction-value { text-align: right; font-size: 13px; font-weight: 700; color: #263b4e; display: flex; flex-direction: column; gap: 2px; }
+.transaction-value small { color: #8a98a4; font-size: 9px; font-weight: 500; }
+.transaction-value.missing strong { color: #b66d25; font-size: 11px; }
 .transaction-value.credit { color: #358068; }
 
 .diagnostic-backdrop { position: fixed; inset: 0; z-index: 20; display: flex; justify-content: flex-end; background: rgba(10,28,45,.36); backdrop-filter: blur(3px); }

@@ -1,7 +1,8 @@
 import type { NormalizedTransaction, ParseResult, TransactionKind } from "../domain/types";
 
 const DATE_FIELDS = ["date", "transactionDate", "bookedAt", "postedAt", "createdDate", "eventDate"];
-const AMOUNT_FIELDS = ["amount", "value", "transactionAmount", "amountInAccountCurrency"];
+const AMOUNT_FIELDS = ["amount", "value", "transactionAmount"];
+const ACCOUNT_AMOUNT_FIELDS = ["amountInAccountCurrency", "accountCurrencyAmount", "convertedAmount"];
 const DESCRIPTION_FIELDS = ["description", "descriptionRaw", "merchantName", "memo", "title", "name"];
 const STATUS_FIELDS = ["status", "transactionStatus", "state"];
 const TYPE_FIELDS = ["type", "transactionType", "creditDebitType", "operationType"];
@@ -98,6 +99,13 @@ export function parseOpenFinanceJson(input: unknown): ParseResult {
     const description = String(firstValue(raw, DESCRIPTION_FIELDS) ?? "Lançamento sem descrição").trim();
     const type = String(firstValue(raw, TYPE_FIELDS) ?? "").trim();
     const status = String(firstValue(raw, STATUS_FIELDS) ?? "UNKNOWN").toUpperCase();
+    const currencyCode = String(raw.currencyCode ?? raw.currency ?? "BRL").toUpperCase();
+    const foreignCurrency = currencyCode !== "BRL";
+    const accountAmount = foreignCurrency ? parseAmount(firstValue(raw, ACCOUNT_AMOUNT_FIELDS)) : originalAmount;
+    const conversionMissing = foreignCurrency && accountAmount === null;
+    if (conversionMissing) {
+      warnings.push(`Linha ${index + 1} mantida sem soma: transação em ${currencyCode} sem amountInAccountCurrency.`);
+    }
     const kind = classify(originalAmount, type, description);
     const cardMetadata = raw.creditCardMetadata && typeof raw.creditCardMetadata === "object" ? raw.creditCardMetadata as Record<string, unknown> : undefined;
     transactions.push({
@@ -110,7 +118,10 @@ export function parseOpenFinanceJson(input: unknown): ParseResult {
       status,
       originalType: type,
       originalAmount,
-      amount: Math.abs(originalAmount),
+      currencyCode,
+      amountInAccountCurrency: foreignCurrency && accountAmount !== null ? accountAmount : undefined,
+      conversionMissing,
+      amount: conversionMissing ? 0 : Math.abs(accountAmount!),
       kind,
       raw,
     });

@@ -15,4 +15,18 @@ describe("JSON parser", () => {
   it("rejects JSON without transactions", () => {
     expect(() => parseOpenFinanceJson({ hello: "world" })).toThrow(/lista de transações/i);
   });
+
+  it("uses amountInAccountCurrency for transactions outside BRL", () => {
+    const parsed = parseOpenFinanceJson([
+      { date: "2026-02-01", amount: 20, amountInAccountCurrency: 109.5, currencyCode: "USD", type: "DEBIT", description: "Compra internacional" },
+      { date: "2026-02-02", amount: 10, currencyCode: "USD", type: "DEBIT", description: "Conversão indisponível" },
+    ]);
+    expect(parsed.transactions[0].originalAmount).toBe(20);
+    expect(parsed.transactions[0].currencyCode).toBe("USD");
+    expect(parsed.transactions[0].amount).toBe(109.5);
+    expect(parsed.transactions[0].conversionMissing).toBe(false);
+    expect(parsed.transactions[1].amount).toBe(0);
+    expect(parsed.transactions[1].conversionMissing).toBe(true);
+    expect(parsed.warnings[0]).toMatch(/sem amountInAccountCurrency/i);
+  });
 });

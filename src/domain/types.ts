@@ -11,6 +11,9 @@ export interface NormalizedTransaction {
   status: string;
   originalType: string;
   originalAmount: number;
+  currencyCode: string;
+  amountInAccountCurrency?: number;
+  conversionMissing: boolean;
   amount: number;
   kind: TransactionKind;
   raw: Record<string, unknown>;

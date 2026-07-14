@@ -21,7 +21,7 @@ describe("invoice inference", () => {
     expect(july?.closingDate.getDate()).toBe(26);
     expect(july?.closingDate.getMonth()).toBe(5);
     expect(july?.payments).toBe(829.13);
-    expect(july?.debits).toBe(741.27);
+    expect(july?.debits).toBe(829.13);
   });
 
   it("infers another closing day from a different status boundary", () => {
@@ -35,5 +35,14 @@ describe("invoice inference", () => {
     expect(anchor.date.getDate()).toBe(14);
     const analysis = inferInvoices(parsed);
     expect(analysis.invoices.some((invoice) => invoice.closingDate.getDate() === 14)).toBe(true);
+  });
+
+  it("sums foreign purchases using the account currency amount", () => {
+    const input = [
+      { id: "a", date: "2026-01-13T12:00:00Z", amount: 20, amountInAccountCurrency: 109.5, currencyCode: "USD", type: "DEBIT", status: "POSTED", description: "Compra USD" },
+      { id: "b", date: "2026-01-15T12:00:00Z", amount: 50, currencyCode: "BRL", type: "DEBIT", status: "PENDING", description: "Compra BRL" },
+    ];
+    const analysis = inferInvoices(parseOpenFinanceJson(input));
+    expect(analysis.invoices.reduce((sum, invoice) => sum + invoice.debits, 0)).toBe(159.5);
   });
 });
