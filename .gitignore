@@ -1,0 +1,11 @@
+node_modules
+dist
+.pnpm-store
+*.tsbuildinfo
+.DS_Store
+coverage
+outputs
+.artifact_runtime
+*.inspect.ndjson
+json_pluggy_c6_jef.json
+build_invoice_simulation.mjs
